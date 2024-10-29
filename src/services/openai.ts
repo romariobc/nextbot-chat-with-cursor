@@ -3,6 +3,14 @@ export type ChatMessage = {
   content: string;
 }
 
+interface OpenAIResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+}
+
 export async function sendMessage(messages: ChatMessage[]) {
   try {
     const response = await fetch('/api/chat', {
@@ -17,7 +25,7 @@ export async function sendMessage(messages: ChatMessage[]) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data = await response.json() as OpenAIResponse;
     return data.choices[0].message.content;
   } catch (error) {
     console.error('Erro ao enviar mensagem:', error);

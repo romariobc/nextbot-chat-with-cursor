@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  api: {
-    bodyParser: false, // Disable body parsing, we'll handle it with formidable
-  },
+  // Removido o objeto api que estava causando erro
 }
 
 module.exports = nextConfig
