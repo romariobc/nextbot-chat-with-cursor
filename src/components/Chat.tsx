@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { sendMessage, ChatMessage } from '@/services/openai'
+import { sendMessage, ChatMessage } from '@/services/chat'
 
 type Message = {
   id: string;

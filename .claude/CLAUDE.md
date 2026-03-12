@@ -2,14 +2,14 @@
 
 ## Sobre o projeto
 
-NextBot Chat é uma aplicação de chat com IA construída com Next.js 15 (App Router) e TypeScript. Usa OpenAI GPT-3.5-turbo como modelo de linguagem. A interface é estilizada com Tailwind CSS.
+NextBot Chat é uma aplicação de chat com IA construída com Next.js 15 (App Router) e TypeScript. Suporta múltiplos providers de LLM (OpenAI, Google Gemini, Anthropic) configuráveis via variável de ambiente. A interface é estilizada com Tailwind CSS.
 
 ## Stack
 
 - **Framework:** Next.js 15 (App Router)
 - **Linguagem:** TypeScript (strict mode)
 - **Estilos:** Tailwind CSS
-- **IA:** OpenAI API (GPT-3.5-turbo)
+- **IA:** Abstração multi-provider (OpenAI, Gemini, Anthropic) — sem SDKs, apenas `fetch`
 - **Runtime:** Node.js 20+
 
 ## Configuração
@@ -18,9 +18,13 @@ NextBot Chat é uma aplicação de chat com IA construída com Next.js 15 (App R
    ```bash
    cp .env.example .env.local
    ```
-2. Adicione sua chave da OpenAI em `.env.local`:
+2. Defina o provider e a chave correspondente em `.env.local`:
    ```
+   LLM_PROVIDER=openai          # openai | gemini | anthropic
+   LLM_MODEL=                   # opcional — sobrescreve modelo padrão
    OPENAI_API_KEY=sk-...
+   GEMINI_API_KEY=...
+   ANTHROPIC_API_KEY=sk-ant-...
    ```
 3. Instale as dependências:
    ```bash
@@ -50,9 +54,16 @@ src/
 │   ├── Chat.tsx           # Componente principal do chat
 │   └── ActionButton.tsx   # Botão de CTA da landing page
 ├── services/
-│   └── openai.ts          # Cliente fetch para /api/chat
+│   └── chat.ts            # Cliente fetch para /api/chat (agnóstico de provider)
 └── lib/
-    └── rateLimit.ts       # Rate limiter em memória
+    ├── rateLimit.ts       # Rate limiter em memória
+    └── llm/
+        ├── types.ts       # Interface LLMProvider + tipo ChatMessage (server-only)
+        ├── index.ts       # Factory: getProvider() — lê LLM_PROVIDER e instancia
+        └── providers/
+            ├── openai.ts      # Implementação OpenAI
+            ├── gemini.ts      # Implementação Google Gemini
+            └── anthropic.ts   # Implementação Anthropic
 ```
 
 ## Convenções de código
@@ -66,21 +77,43 @@ src/
 ## Regras de segurança — CRÍTICO
 
 - **NUNCA** prefixar variáveis de ambiente sensíveis com `NEXT_PUBLIC_`
-- A chave `OPENAI_API_KEY` deve ser acessada **apenas** em código server-side (`/api/` routes)
-- Toda validação de input deve ocorrer no servidor, não no cliente
+- Todas as chaves de API (`OPENAI_API_KEY`, `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`) devem ser acessadas **apenas** em código server-side
+- `src/lib/llm/` é **server-only** — nunca importar de componentes client
+- `src/services/chat.ts` é client-safe — apenas faz `fetch('/api/chat')`
+- O tipo `ChatMessage` é definido nos dois lados (lib e services) para manter a separação client/server
+- Toda validação de input ocorre no servidor, não no cliente
 - A API `/api/chat` possui rate limiting — respeitar nos testes
 
 ## Fluxo de dados
 
 ```
 Usuário digita mensagem
-    → Chat.tsx (cliente) → sendMessage() em services/openai.ts
+    → Chat.tsx (cliente) → sendMessage() em services/chat.ts
     → POST /api/chat (servidor)
     → rate limit check → validação de input
-    → fetch OpenAI API com OPENAI_API_KEY
-    → retorna resposta ao cliente
+    → getProvider() seleciona provider via LLM_PROVIDER
+    → provider.chat(messages) chama a API do provider com a chave correspondente
+    → retorna { reply: string } ao cliente
     → Chat.tsx renderiza a resposta
 ```
+
+## Como adicionar um novo provider
+
+1. Criar `src/lib/llm/providers/seuprovider.ts` implementando `LLMProvider`
+2. Adicionar `case 'seuprovider': return new SeuProvider();` no `switch` em `src/lib/llm/index.ts`
+3. Adicionar `SEUPROVIDER_API_KEY` no `.env.example`
+
+Nenhum outro arquivo precisa mudar.
+
+## Variáveis de ambiente
+
+| Variável | Obrigatória | Padrão | Descrição |
+|---|---|---|---|
+| `LLM_PROVIDER` | Não | `openai` | Qual provider usar (`openai`, `gemini`, `anthropic`) |
+| `LLM_MODEL` | Não | (por provider) | Sobrescreve o modelo padrão do provider |
+| `OPENAI_API_KEY` | Se `openai` | — | Chave da API OpenAI |
+| `GEMINI_API_KEY` | Se `gemini` | — | Chave da API Google Gemini |
+| `ANTHROPIC_API_KEY` | Se `anthropic` | — | Chave da API Anthropic |
 
 ## Boas práticas para contribuições
 
@@ -89,3 +122,4 @@ Usuário digita mensagem
 - Erros de API devem retornar status HTTP semânticos (400, 429, 500)
 - Novos componentes client-side devem ter `'use client'` na primeira linha
 - Manter o handler da rota `/api/chat` simples — lógica de negócio vai em `src/lib/`
+- Providers LLM usam `fetch` direto (sem SDKs) para manter zero dependências extras

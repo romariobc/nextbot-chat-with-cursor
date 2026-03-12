@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { getProvider } from '@/lib/llm';
+import type { ChatMessage } from '@/lib/llm';
 
 const VALID_ROLES = new Set(['user', 'assistant', 'system']);
 const MAX_MESSAGES = 50;
@@ -46,24 +48,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
-        messages,
-        temperature: 0.7,
-        max_tokens: 1000,
-      }),
-    });
-
-    const data = await response.json();
-    return NextResponse.json(data);
+    const provider = getProvider();
+    const reply = await provider.chat(messages as ChatMessage[]);
+    return NextResponse.json({ reply });
   } catch (error) {
-    console.error('Erro ao chamar OpenAI:', error);
+    console.error('Erro ao chamar LLM provider:', error);
     return NextResponse.json({ error: 'Erro interno do servidor.' }, { status: 500 });
   }
 }
