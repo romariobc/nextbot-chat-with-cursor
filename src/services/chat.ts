@@ -1,17 +1,13 @@
 export type ChatMessage = {
   role: 'user' | 'assistant' | 'system';
   content: string;
+};
+
+interface ChatAPIResponse {
+  reply: string;
 }
 
-interface OpenAIResponse {
-  choices: Array<{
-    message: {
-      content: string;
-    };
-  }>;
-}
-
-export async function sendMessage(messages: ChatMessage[]) {
+export async function sendMessage(messages: ChatMessage[]): Promise<string> {
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
@@ -25,10 +21,10 @@ export async function sendMessage(messages: ChatMessage[]) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data = await response.json() as OpenAIResponse;
-    return data.choices[0].message.content;
+    const data = await response.json() as ChatAPIResponse;
+    return data.reply;
   } catch (error) {
     console.error('Erro ao enviar mensagem:', error);
     throw error;
   }
-} 
+}
