@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { sendMessage, ChatMessage } from '@/services/openai'
 
 type Message = {
-  id: number;
+  id: string;
   content: string;
   isBot: boolean;
 }
@@ -16,7 +16,7 @@ type ChatProps = {
 export default function Chat({ onEndChat }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: 1,
+      id: crypto.randomUUID(),
       content: "Olá! Como posso ajudar você hoje?",
       isBot: true
     }
@@ -29,7 +29,7 @@ export default function Chat({ onEndChat }: ChatProps) {
     
     try {
       const farewellMessage: Message = {
-        id: messages.length + 1,
+        id: crypto.randomUUID(),
         content: "Obrigado por utilizar nossos serviços! Espero ter ajudado. Até a próxima! 👋",
         isBot: true
       };
@@ -53,7 +53,7 @@ export default function Chat({ onEndChat }: ChatProps) {
     if (!inputMessage.trim() || isLoading) return;
 
     const newMessage: Message = {
-      id: messages.length + 1,
+      id: crypto.randomUUID(),
       content: inputMessage,
       isBot: false
     };
@@ -76,7 +76,7 @@ export default function Chat({ onEndChat }: ChatProps) {
       const response = await sendMessage(messageHistory);
 
       const botResponse: Message = {
-        id: messages.length + 2,
+        id: crypto.randomUUID(),
         content: response,
         isBot: true
       };
@@ -85,7 +85,7 @@ export default function Chat({ onEndChat }: ChatProps) {
     } catch (error) {
       console.error('Erro ao processar mensagem:', error);
       const errorMessage: Message = {
-        id: messages.length + 2,
+        id: crypto.randomUUID(),
         content: "Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.",
         isBot: true
       };
