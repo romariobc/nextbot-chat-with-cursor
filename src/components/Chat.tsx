@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { sendMessage, ChatMessage } from '@/services/chat'
+import ReactMarkdown from 'react-markdown'
 
 type Message = {
   id: string;
@@ -183,7 +184,13 @@ export default function Chat({ onEndChat }: ChatProps) {
                     : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-br-sm'
                 }`}
               >
-                {message.content}
+                {message.isBot ? (
+                  <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none break-words leading-relaxed text-gray-900 dark:text-gray-100">
+                    {message.content}
+                  </ReactMarkdown>
+                ) : (
+                  <div className="whitespace-pre-wrap break-words">{message.content}</div>
+                )}
               </div>
             </div>
           </div>
