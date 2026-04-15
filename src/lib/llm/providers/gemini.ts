@@ -6,7 +6,7 @@ interface GeminiResponse {
   candidates: Array<{ content: { parts: GeminiPart[] } }>;
 }
 
-const DEFAULT_MODEL = 'gemini-1.5-flash';
+const DEFAULT_MODEL = 'gemini-2.5-flash';
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 export class GeminiProvider implements LLMProvider {
@@ -17,7 +17,7 @@ export class GeminiProvider implements LLMProvider {
     const key = process.env.GEMINI_API_KEY;
     if (!key) throw new Error('GEMINI_API_KEY não está definida');
     this.apiKey = key;
-    this.model = process.env.LLM_MODEL ?? DEFAULT_MODEL;
+    this.model = process.env.LLM_MODEL || DEFAULT_MODEL;
   }
 
   async chat(messages: ChatMessage[]): Promise<string> {
@@ -49,7 +49,9 @@ export class GeminiProvider implements LLMProvider {
     });
 
     if (!response.ok) {
-      throw new Error(`Gemini error: ${response.status}`);
+      const errorText = await response.text();
+      console.error("GEMINI API ERROR: ", errorText);
+      throw new Error(`Gemini error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json() as GeminiResponse;

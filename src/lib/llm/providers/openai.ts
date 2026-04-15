@@ -15,7 +15,7 @@ export class OpenAIProvider implements LLMProvider {
     const key = process.env.OPENAI_API_KEY;
     if (!key) throw new Error('OPENAI_API_KEY não está definida');
     this.apiKey = key;
-    this.model = process.env.LLM_MODEL ?? DEFAULT_MODEL;
+    this.model = process.env.LLM_MODEL || DEFAULT_MODEL;
   }
 
   async chat(messages: ChatMessage[]): Promise<string> {

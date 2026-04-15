@@ -15,7 +15,7 @@ export class AnthropicProvider implements LLMProvider {
     const key = process.env.ANTHROPIC_API_KEY;
     if (!key) throw new Error('ANTHROPIC_API_KEY não está definida');
     this.apiKey = key;
-    this.model = process.env.LLM_MODEL ?? DEFAULT_MODEL;
+    this.model = process.env.LLM_MODEL || DEFAULT_MODEL;
   }
 
   async chat(messages: ChatMessage[]): Promise<string> {
