@@ -185,9 +185,11 @@ export default function Chat({ onEndChat }: ChatProps) {
                 }`}
               >
                 {message.isBot ? (
-                  <ReactMarkdown className="prose prose-sm dark:prose-invert max-w-none break-words leading-relaxed text-gray-900 dark:text-gray-100">
-                    {message.content}
-                  </ReactMarkdown>
+                  <div className="prose prose-sm dark:prose-invert max-w-none break-words leading-relaxed text-gray-900 dark:text-gray-100">
+                    <ReactMarkdown>
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
                 ) : (
                   <div className="whitespace-pre-wrap break-words">{message.content}</div>
                 )}
