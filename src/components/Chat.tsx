@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { sendMessage, ChatMessage } from '@/services/chat'
 import ReactMarkdown from 'react-markdown'
+import PDFUpload from './PDFUpload'
 
 type Message = {
   id: string;
@@ -24,6 +25,8 @@ export default function Chat({ onEndChat }: ChatProps) {
   ]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [pdfContext, setPdfContext] = useState<string | null>(null);
+  const [attachedFileName, setAttachedFileName] = useState<string | null>(null);
 
   const handleEndChat = async () => {
     setIsLoading(true);
@@ -69,12 +72,23 @@ export default function Chat({ onEndChat }: ChatProps) {
         content: msg.content
       }));
 
+      if (pdfContext) {
+        messageHistory.push({
+          role: 'system',
+          content: `Contexto do arquivo PDF "${attachedFileName}":\n\n${pdfContext.substring(0, 45000)}`
+        });
+      }
+
       messageHistory.push({
         role: 'user',
         content: inputMessage
       });
 
       const response = await sendMessage(messageHistory);
+      
+      // Limpa o contexto do PDF após o envio bem-sucedido (conforme solicitado: "apenas na mensagem atual")
+      setPdfContext(null);
+      setAttachedFileName(null);
 
       const botResponse: Message = {
         id: crypto.randomUUID(),
@@ -228,13 +242,38 @@ export default function Chat({ onEndChat }: ChatProps) {
       </div>
 
       {/* Área de input */}
-      <form onSubmit={handleSendMessage} className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex gap-3">
+      <div className="p-4 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700">
+        {attachedFileName && (
+          <div className="flex items-center gap-2 mb-3 bg-blue-50 dark:bg-blue-900/30 px-3 py-2 rounded-lg border border-blue-100 dark:border-blue-800 animate-fade-in text-sm text-blue-700 dark:text-blue-300">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+            </svg>
+            <span className="font-medium truncate max-w-[200px]">{attachedFileName}</span>
+            <button 
+              type="button"
+              onClick={() => { setPdfContext(null); setAttachedFileName(null); }}
+              className="ml-auto hover:text-blue-800 dark:hover:text-blue-100"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
+        <form onSubmit={handleSendMessage} className="flex gap-3 items-center">
+          <PDFUpload 
+            onLoading={setIsLoading}
+            onTextExtracted={(text, name) => {
+              setPdfContext(text);
+              setAttachedFileName(name);
+            }}
+            disabled={isLoading}
+          />
           <input
             type="text"
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            placeholder="Digite sua mensagem..."
+            placeholder={attachedFileName ? "Diga algo sobre o PDF..." : "Digite sua mensagem..."}
             disabled={isLoading}
             className="flex-1 px-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 transition-all"
           />
@@ -257,8 +296,8 @@ export default function Chat({ onEndChat }: ChatProps) {
               />
             </svg>
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 } 

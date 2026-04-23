@@ -39,7 +39,7 @@ export class AnthropicProvider implements LLMProvider {
         model: this.model,
         messages: filteredMessages,
         ...(systemText ? { system: systemText } : {}),
-        max_tokens: 1000,
+        max_tokens: 4096,
         temperature: 0.7,
       }),
     });

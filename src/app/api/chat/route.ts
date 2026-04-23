@@ -5,7 +5,7 @@ import type { ChatMessage } from '@/lib/llm';
 
 const VALID_ROLES = new Set(['user', 'assistant', 'system']);
 const MAX_MESSAGES = 50;
-const MAX_CONTENT_LENGTH = 4000;
+const MAX_CONTENT_LENGTH = 50000;
 
 export async function POST(request: Request) {
   const rateLimit = checkRateLimit(request);
